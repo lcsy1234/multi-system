@@ -31,6 +31,7 @@ def main():
     # Refuse occupied ports so checks never silently target an existing process.
     for name, port in SERVICES.items():
         with socket.socket() as sock:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 sock.bind(("127.0.0.1", port))
             except OSError as error:
@@ -84,7 +85,8 @@ def main():
             print(f"OK {name}: http://127.0.0.1:{port}/health | /api.json | /swagger", flush=True)
 
         if sys.argv[1] == "run":
-            print("All services ready. Logs: .logs/*.log. Ctrl+C stops all four.", flush=True)
+            print("MES demo: http://127.0.0.1:8004/ | Logs: .logs/*.log", flush=True)
+            print("Worker is NOT started. Run make worker in another terminal to consume queued tasks.", flush=True)
             while True:
                 for name, process in processes.items():
                     if process.poll() is not None:

@@ -1,10 +1,15 @@
+// =================================================================================
+// Code generated and maintained by GoFrame CLI tool. DO NOT EDIT.
+// =================================================================================
+
 package health
 
 import (
 	"context"
-	v1 "multi-system/mes/api/health/v1"
+
+	"multi-system/mes/api/health/v1"
 )
 
 type IHealthV1 interface {
-	Health(context.Context, *v1.HealthReq) (*v1.HealthRes, error)
+	Health(ctx context.Context, req *v1.HealthReq) (res *v1.HealthRes, err error)
 }

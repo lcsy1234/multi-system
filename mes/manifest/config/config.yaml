@@ -6,3 +6,8 @@ server:
 logger:
   level: "all"
   stdout: true
+
+# Local demo only. Environment variables override these values.
+demo:
+  redisAddress: "127.0.0.1:6379"
+  redisPassword: ""
