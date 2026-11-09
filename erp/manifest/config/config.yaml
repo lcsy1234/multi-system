@@ -1,0 +1,8 @@
+server:
+  address: "127.0.0.1:8001"
+  openapiPath: "/api.json"
+  swaggerPath: "/swagger"
+
+logger:
+  level: "all"
+  stdout: true

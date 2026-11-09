@@ -1,0 +1,13 @@
+bin/
+main
+main.exe
+output/
+manifest/output/
+temp/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.idea/
+.vscode/

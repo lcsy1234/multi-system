@@ -1,0 +1,6 @@
+# GoFrame CLI configuration. Add code-generation settings when a database is chosen.
+gfcli:
+  gen:
+    ctrl:
+      srcFolder: api
+      dstFolder: internal/controller
