@@ -23,7 +23,7 @@ vet:
 build:
 	@mkdir -p .bin
 	@set -e; for service in $(SERVICES); do (cd $$service && GOWORK=off go build -o ../.bin/$$service .); done
-	cd mes && GOWORK=off go build -o ../.bin/mes-listener ./boot/listener.go
+	cd mes && GOWORK=off go build -o ../.bin/mes-listener ./internal/boot/listener.go
 
 dev: build
 	python3 scripts/services.py run

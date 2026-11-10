@@ -30,13 +30,13 @@ go run .
 - `internal/client/`：调用其他系统的客户端。
 - `internal/model/`、`internal/dao/`：数据模型与数据库访问。
 - `internal/cmd/`：服务启动及路由绑定。
-- `boot/listener.go`：独立消费进程入口，调用 `cmd.Listener`。
+- `internal/boot/listener.go`：独立消费进程入口，调用 `cmd.Listener`。
 - `utility/worker/producer.go`、`consumer.go`：Asynq 生产和消费封装。
 - `manifest/config/`：本地开发配置，不存放真实凭证。
 
-前端入口：http://127.0.0.1:8004/ 。另开终端运行 `go run ./boot/listener.go` 消费任务。根目录 `make demo` 仅启动 HTTP 与 Redis，另开终端 `make listener` 才开始消费。
+前端入口：http://127.0.0.1:8004/ 。另开终端运行 `go run ./internal/boot/listener.go` 消费任务。根目录 `make demo` 仅启动 HTTP 与 Redis，另开终端 `make listener` 才开始消费。
 
-使用 Demo Redis 6380 时，在本目录运行 `REDIS_ADDR=127.0.0.1:6380 go run ./boot/listener.go`。
+使用 Demo Redis 6380 时，在本目录运行 `REDIS_ADDR=127.0.0.1:6380 go run ./internal/boot/listener.go`。
 也支持 `go run . listener` 子命令，两种入口均运行同一个 `cmd.Listener`；选择一种启动即可。
 根目录 `make listener` 使用独立二进制 `.bin/mes-listener`，`make worker` 保留为兼容别名。
 

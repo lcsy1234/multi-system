@@ -52,14 +52,14 @@ REDIS_ADDR=127.0.0.1:6379 make listener
 ## 按顺序读代码
 
 1. `mes/internal/controller/material/material_v1_create.go`：创建领料申请的 HTTP 入口。
-2. `mes/internal/asynctask/event.go`：统一定义事件名 `EventMaterialRequisitionConsume` 和队列名称。
+2. `mes/internal/asynctask/asynctask.go`：统一定义事件名 `EventMaterialRequisitionConsume` 和队列名称。
 3. `mes/internal/logic/material/service.go` 的 `Create`：保存申请，构造 `model.MaterialRequisitionConsumeInfo`，调用 `Worker.EnqueueTask`。
 4. `mes/utility/worker/producer.go` 的 `EnqueueTask`：统一完成 JSON 序列化、`asynq.NewTask`、Redis 入队及重复任务处理；当前设置不自动重试，成功任务保留 24 小时。
-5. `mes/internal/cmd/listener.go` 的 `Listener`：初始化依赖，通过 `listener.NewMux` 注册事件与 Processor，调用 `worker.StartConsumer` 启动消费。独立程序入口在 `mes/boot/listener.go`，Asynq 消费封装在 `mes/utility/worker/consumer.go`。
-6. `mes/internal/listener/material_requisition_consume.go` 的 `MaterialRequisitionConsumeProcessor`：反序列化、校验申请 ID，调用业务方法 `service.Consume`。
+5. `mes/internal/cmd/listener.go` 的 `Listener`：通过 `listener.Init(service)` 初始化业务依赖，再调用 `worker.StartConsumer(ctx, asynctask.Processors())` 统一注册并启动消费。worker 内部读取 Redis 和 `worker.consumer` 配置。映射集中维护在 `mes/internal/asynctask/asynctask.go`，同一文件定义任务名和任务对应的 handler 回调函数。独立程序入口在 `mes/internal/boot/listener.go`，服务依赖初始化在 `mes/internal/bootstrap/bootstrap.go`，Asynq 消费封装在 `mes/utility/worker/consumer.go`。
+6. `mes/internal/listener/material_requisition_consume.go` 的 `MaterialRequisitionConsumeProcessor` 回调函数：反序列化、校验申请 ID，调用业务方法 `service.Consume`。
 7. `mes/internal/logic/material/consume.go` 的 `Consume`：查询申请、打印日志、更新消费状态。
 
-生产端的 worker 客户端由 `boot.New` 创建并注入 `Service.Worker`。业务调用示例：
+生产端的 worker 客户端由 `bootstrap.New` 创建并注入 `Service.Worker`。业务调用示例：
 
 ```go
 payload := model.MaterialRequisitionConsumeInfo{ApplicationID: application.ID}

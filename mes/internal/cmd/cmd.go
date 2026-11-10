@@ -5,7 +5,7 @@ import (
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/gogf/gf/v2/os/gcmd"
-	"multi-system/mes/internal/boot"
+	"multi-system/mes/internal/bootstrap"
 	"multi-system/mes/internal/controller/health"
 	"multi-system/mes/internal/controller/material"
 	"multi-system/mes/internal/storage"
@@ -18,11 +18,11 @@ var Main = gcmd.Command{
 	Usage: "mes",
 	Brief: "Manufacturing execution and material requisitions",
 	Func: func(ctx context.Context, parser *gcmd.Parser) error {
-		service, err := boot.New(ctx)
+		service, err := bootstrap.New(ctx)
 		if err != nil {
 			return err
 		}
-		defer boot.Close(service)
+		defer bootstrap.Close(service)
 		materialController := material.NewV1()
 		materialController.Service = service
 		s := g.Server()
