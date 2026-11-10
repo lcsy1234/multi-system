@@ -5,9 +5,11 @@ import (
 	"context"
 	"github.com/gogf/gf/v2/frame/g"
 	"github.com/hibiken/asynq"
+	"multi-system/mes/internal/asynctask"
+	"multi-system/mes/internal/listener"
 	"multi-system/mes/internal/logic/material"
 	"multi-system/mes/internal/storage"
-	"multi-system/mes/internal/taskqueue"
+	"multi-system/mes/utility/worker"
 	"os"
 )
 
@@ -26,15 +28,15 @@ func New(ctx context.Context) (*material.Service, error) {
 	password := Value(ctx, "REDIS_PASSWORD", "demo.redisPassword", "")
 	return &material.Service{
 		DB: db,
-		Publisher: taskqueue.NewPublisher(
+		Worker: worker.NewProducer(
 			asynq.RedisClientOpt{Addr: address, Password: password},
-			material.Queue,
+			asynctask.MaterialQueue,
 		),
 	}, nil
 }
 func Close(service *material.Service) {
 	service.DB.Close()
-	service.Publisher.Close()
+	service.Worker.Close()
 }
 func Worker(ctx context.Context) error {
 	service, err := New(ctx)
@@ -45,8 +47,12 @@ func Worker(ctx context.Context) error {
 	if err := service.DB.PingContext(ctx); err != nil {
 		return err
 	}
-	server := asynq.NewServer(asynq.RedisClientOpt{Addr: Value(ctx, "REDIS_ADDR", "demo.redisAddress", "127.0.0.1:6379"), Password: Value(ctx, "REDIS_PASSWORD", "demo.redisPassword", "")}, asynq.Config{Concurrency: 1, Queues: map[string]int{material.Queue: 1}})
-	mux := asynq.NewServeMux()
-	mux.HandleFunc(material.TaskType, service.HandleTask)
-	return server.Run(mux)
+	server := asynq.NewServer(asynq.RedisClientOpt{
+		Addr:     Value(ctx, "REDIS_ADDR", "demo.redisAddress", "127.0.0.1:6379"),
+		Password: Value(ctx, "REDIS_PASSWORD", "demo.redisPassword", ""),
+	}, asynq.Config{
+		Concurrency: 1,
+		Queues:      map[string]int{asynctask.MaterialQueue: 1},
+	})
+	return server.Run(listener.NewMux(service))
 }

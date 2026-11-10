@@ -1,5 +1,5 @@
-// Package taskqueue 封装异步任务的序列化和 Redis 入队操作。
-package taskqueue
+// Package worker 封装异步任务生产端，不包含领料业务逻辑。
+package worker
 
 import (
 	"context"
@@ -10,27 +10,27 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-type Publisher struct {
+type Producer struct {
 	client *asynq.Client
 	queue  string
 }
 
-func NewPublisher(redis asynq.RedisClientOpt, queue string) *Publisher {
-	return &Publisher{
+func NewProducer(redis asynq.RedisClientOpt, queue string) *Producer {
+	return &Producer{
 		client: asynq.NewClient(redis),
 		queue:  queue,
 	}
 }
 
-// Push 将业务数据序列化为 JSON 并推入队列，不等待消费者处理。
+// EnqueueTask 将事件和业务数据封装为任务并推入队列，不等待消费者处理。
 // taskID 用于队列内去重；相同 ID 的任务已存在时，按已入队处理。
-func (p *Publisher) Push(ctx context.Context, taskType, taskID string, payload any) error {
+func (p *Producer) EnqueueTask(ctx context.Context, event, taskID string, payload any) error {
 	data, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
 
-	task := asynq.NewTask(taskType, data)
+	task := asynq.NewTask(event, data)
 	_, err = p.client.EnqueueContext(ctx, task,
 		asynq.Queue(p.queue),
 		asynq.TaskID(taskID),
@@ -43,6 +43,6 @@ func (p *Publisher) Push(ctx context.Context, taskType, taskID string, payload a
 	return err
 }
 
-func (p *Publisher) Close() error {
+func (p *Producer) Close() error {
 	return p.client.Close()
 }

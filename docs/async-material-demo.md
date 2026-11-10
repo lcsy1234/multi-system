@@ -52,10 +52,21 @@ REDIS_ADDR=127.0.0.1:6379 make worker
 ## 按顺序读代码
 
 1. `mes/internal/controller/material/material_v1_create.go`：创建领料申请的 HTTP 入口。
-2. `mes/internal/logic/material/service.go` 的 `Create`：保存申请，构造 `TaskPayload`，调用 `Publisher.Push`。
-   `mes/internal/taskqueue/publisher.go` 统一封装 JSON 序列化、任务创建、Redis 入队及重复任务处理；当前设置不自动重试，成功任务保留 24 小时。
-3. `mes/internal/boot/boot.go` 的 `Worker`：注册队列和任务处理函数。
-4. `mes/internal/logic/material/worker.go` 的 `HandleTask`：反序列化、查询申请、打印日志。
+2. `mes/internal/asynctask/event.go`：统一定义事件名 `EventMaterialRequisitionConsume` 和队列名称。
+3. `mes/internal/logic/material/service.go` 的 `Create`：保存申请，构造 `model.MaterialRequisitionConsumeInfo`，调用 `Worker.EnqueueTask`。
+4. `mes/utility/worker/producer.go` 的 `EnqueueTask`：统一完成 JSON 序列化、`asynq.NewTask`、Redis 入队及重复任务处理；当前设置不自动重试，成功任务保留 24 小时。
+5. `mes/internal/boot/boot.go` 的 `Worker`：启动消费进程，通过 `listener.NewMux` 注册事件与 Processor。
+6. `mes/internal/listener/material_requisition_consume.go` 的 `MaterialRequisitionConsumeProcessor`：反序列化、校验申请 ID，调用业务方法 `service.Consume`。
+7. `mes/internal/logic/material/consume.go` 的 `Consume`：查询申请、打印日志、更新消费状态。
+
+生产端的 worker 客户端由 `boot.New` 创建并注入 `Service.Worker`。业务调用示例：
+
+```go
+payload := model.MaterialRequisitionConsumeInfo{ApplicationID: application.ID}
+err := s.Worker.EnqueueTask(ctx, asynctask.EventMaterialRequisitionConsume, application.ID, payload)
+```
+
+第三个参数使用申请 ID 作为任务 ID，重复投递同一申请时按已有任务处理。
 
 任务类型是 `mes:material:consume`，队列是 `mes-material`。任务内容只有：
 

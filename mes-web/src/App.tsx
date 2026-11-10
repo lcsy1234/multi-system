@@ -109,6 +109,7 @@ export default function App() {
     {
       title: "操作",
       width: 160,
+      fixed: "right",
       render: (_, row) => (
         <Space>
           <Button
@@ -172,6 +173,7 @@ export default function App() {
     {
       title: "操作",
       width: 80,
+      fixed: "right",
       render: (_, row) => (
         <Button type="link" size="small" onClick={() => setDetailId(row.id)}>
           详情

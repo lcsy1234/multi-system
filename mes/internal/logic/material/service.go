@@ -13,18 +13,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"multi-system/mes/internal/asynctask"
 	"multi-system/mes/internal/model"
-	"multi-system/mes/internal/taskqueue"
+	"multi-system/mes/utility/worker"
 )
-
-const Queue = "mes-material"
-const TaskType = "mes:material:consume"
 
 var decimal = regexp.MustCompile(`^(0|[1-9][0-9]{0,8})(\.[0-9]{1,4})?$`)
 
 type Service struct {
-	DB        *sql.DB
-	Publisher *taskqueue.Publisher
+	DB     *sql.DB
+	Worker *worker.Producer
 }
 
 func Validate(s model.Submission) error {
@@ -112,8 +110,8 @@ func (s *Service) Create(ctx context.Context, input model.Submission) (*model.Re
 		return savedApplication, nil
 	}
 
-	payload := TaskPayload{ApplicationID: application.ID}
-	if enqueueErr := s.Publisher.Push(ctx, TaskType, application.ID, payload); enqueueErr != nil {
+	payload := model.MaterialRequisitionConsumeInfo{ApplicationID: application.ID}
+	if enqueueErr := s.Worker.EnqueueTask(ctx, asynctask.EventMaterialRequisitionConsume, application.ID, payload); enqueueErr != nil {
 		message := "申请已保存，但任务入队失败：" + enqueueErr.Error()
 		if statusErr := s.SetStatus(ctx, application.ID, "enqueue_failed", message); statusErr != nil {
 			return nil, statusErr
