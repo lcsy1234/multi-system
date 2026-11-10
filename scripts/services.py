@@ -86,7 +86,7 @@ def main():
 
         if sys.argv[1] == "run":
             print("MES demo: http://127.0.0.1:8004/ | Logs: .logs/*.log", flush=True)
-            print("Worker is NOT started. Run make worker in another terminal to consume queued tasks.", flush=True)
+            print("Listener is NOT started. Run make listener in another terminal to consume queued tasks.", flush=True)
             while True:
                 for name, process in processes.items():
                     if process.poll() is not None:

@@ -17,7 +17,7 @@ make demo
 另开终端执行：
 
 ```sh
-make worker
+make listener
 ```
 
 观察终端消费日志，以及页面“已排队 → 已消费”的变化。当前不调用 SCM，不包含 outbox、故障注入或手动重投。
@@ -31,7 +31,7 @@ make worker
 ```sh
 make db-init       # 初始化 MES MySQL 库与表
 make dev           # HTTP 服务，使用自有 Redis（默认 6379），不启动 worker
-make worker        # 消费任务，默认使用 Demo Redis 6380
+make listener        # 消费任务，默认使用 Demo Redis 6380
 make frontend-dev  # React 开发服务 5173（支持热更新，代理到 MES 8004）
 make frontend-build # TypeScript 检查与生产构建
 make test

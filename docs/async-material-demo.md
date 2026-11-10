@@ -30,7 +30,7 @@ make demo
 保持第一个终端运行，另开终端执行：
 
 ```sh
-make worker
+make listener
 ```
 
 终端会打印：
@@ -41,12 +41,12 @@ make worker
 
 点击页面“刷新数据”，状态变为“已消费”；也可以打开“自动刷新（5 秒）”开关。Ctrl+C 可单独停止 worker，再提交一笔申请，就能再次观察排队。
 
-`make worker` 默认使用 Demo Redis 6380。使用已有 Redis 时需要两边指向同一个实例：
+`make listener` 默认使用 Demo Redis 6380。使用已有 Redis 时需要两边指向同一个实例：
 
 ```sh
 # 例如自有 Redis 6379，HTTP 与消费端都显式配置
 REDIS_ADDR=127.0.0.1:6379 make dev
-REDIS_ADDR=127.0.0.1:6379 make worker
+REDIS_ADDR=127.0.0.1:6379 make listener
 ```
 
 ## 按顺序读代码
@@ -55,7 +55,7 @@ REDIS_ADDR=127.0.0.1:6379 make worker
 2. `mes/internal/asynctask/event.go`：统一定义事件名 `EventMaterialRequisitionConsume` 和队列名称。
 3. `mes/internal/logic/material/service.go` 的 `Create`：保存申请，构造 `model.MaterialRequisitionConsumeInfo`，调用 `Worker.EnqueueTask`。
 4. `mes/utility/worker/producer.go` 的 `EnqueueTask`：统一完成 JSON 序列化、`asynq.NewTask`、Redis 入队及重复任务处理；当前设置不自动重试，成功任务保留 24 小时。
-5. `mes/internal/boot/boot.go` 的 `Worker`：启动消费进程，通过 `listener.NewMux` 注册事件与 Processor。
+5. `mes/internal/cmd/listener.go` 的 `Listener`：初始化依赖，通过 `listener.NewMux` 注册事件与 Processor，调用 `worker.StartConsumer` 启动消费。独立程序入口在 `mes/boot/listener.go`，Asynq 消费封装在 `mes/utility/worker/consumer.go`。
 6. `mes/internal/listener/material_requisition_consume.go` 的 `MaterialRequisitionConsumeProcessor`：反序列化、校验申请 ID，调用业务方法 `service.Consume`。
 7. `mes/internal/logic/material/consume.go` 的 `Consume`：查询申请、打印日志、更新消费状态。
 

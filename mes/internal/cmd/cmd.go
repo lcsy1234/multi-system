@@ -42,6 +42,4 @@ var Main = gcmd.Command{
 	},
 }
 
-var Worker = gcmd.Command{Name: "worker", Usage: "worker", Brief: "Run MES Asynq material worker", Func: func(ctx context.Context, parser *gcmd.Parser) error { return boot.Worker(ctx) }}
-
 var Migrate = gcmd.Command{Name: "migrate", Brief: "Create MES demo MySQL schema", Func: func(ctx context.Context, parser *gcmd.Parser) error { return storage.Migrate(ctx) }}

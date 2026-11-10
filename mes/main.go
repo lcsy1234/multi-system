@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	if err := cmd.Main.AddCommand(&cmd.Worker, &cmd.Migrate); err != nil {
+	if err := cmd.Main.AddCommand(&cmd.Listener, &cmd.Migrate); err != nil {
 		panic(err)
 	}
 	cmd.Main.Run(gctx.GetInitCtx())

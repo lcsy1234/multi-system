@@ -1,4 +1,4 @@
-// Package worker 封装异步任务生产端，不包含领料业务逻辑。
+// Package worker 封装异步任务生产端和消费端，不包含领料业务逻辑。
 package worker
 
 import (

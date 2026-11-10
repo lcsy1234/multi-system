@@ -69,7 +69,7 @@ def main():
             records=request(base,"/api/v1/material-requisitions")["data"]["records"]
             assert len(records)==1 and records[0]["status"]=="queued"
             print("OK worker 停止时：申请保存成功，任务保持排队",flush=True)
-            worker_log=start("worker",[str(ROOT/".bin/mes"),"worker"],ROOT/"mes")
+            worker_log=start("listener",[str(ROOT/".bin/mes-listener")],ROOT/"mes")
             for _ in range(100):
                 record=request(base,"/api/v1/material-requisitions")["data"]["records"][0]
                 if record["status"]=="consumed":break

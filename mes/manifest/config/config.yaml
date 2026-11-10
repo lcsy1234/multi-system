@@ -7,6 +7,13 @@ logger:
   level: "all"
   stdout: true
 
+# Asynq 消费配置，修改后重启 listener 生效。
+worker:
+  consumer:
+    concurrency: 1 # 同时处理的任务数
+    queues:
+      mes-material: 1 # 队列名称及消费权重，与生产端的队列名称保持一致
+
 # Local demo only. Environment variables override these values.
 demo:
   redisAddress: "127.0.0.1:6379"

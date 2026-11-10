@@ -1,11 +1,12 @@
 SERVICES := erp wms scm mes
 
-.PHONY: help deps fmt test vet build dev smoke demo integration db-init worker frontend-dev frontend-build
+.PHONY: help deps fmt test vet build dev smoke demo integration db-init listener worker frontend-dev frontend-build
 
 help:
 	@echo "deps  下载依赖 | fmt  格式化 | test  编译检查/运行测试 | vet  静态检查"
 	@echo "build 编译四个服务 | dev 启动四个服务 | smoke 启动并验证四个服务"
 	@echo "demo 启动 Redis + 四个服务（不启动消费） | integration 验证真实异步链路"
+	@echo "listener 启动独立消费进程 | worker 为 listener 的兼容别名"
 
 deps:
 	@set -e; for service in $(SERVICES); do (cd $$service && GOWORK=off go mod download); done
@@ -22,6 +23,7 @@ vet:
 build:
 	@mkdir -p .bin
 	@set -e; for service in $(SERVICES); do (cd $$service && GOWORK=off go build -o ../.bin/$$service .); done
+	cd mes && GOWORK=off go build -o ../.bin/mes-listener ./boot/listener.go
 
 dev: build
 	python3 scripts/services.py run
@@ -38,8 +40,10 @@ demo: frontend-build db-init
 integration: build
 	python3 scripts/integration.py
 
-worker: build
-	cd mes && REDIS_ADDR=$${REDIS_ADDR:-127.0.0.1:6380} ../.bin/mes worker
+listener: build
+	cd mes && REDIS_ADDR=$${REDIS_ADDR:-127.0.0.1:6380} ../.bin/mes-listener
+
+worker: listener
 
 frontend-build:
 	@test -d mes-web/node_modules || npm --prefix mes-web ci
