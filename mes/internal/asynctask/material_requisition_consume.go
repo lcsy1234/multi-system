@@ -1,4 +1,4 @@
-package listener
+package asynctask
 
 import (
 	"context"
@@ -31,7 +31,7 @@ func MaterialRequisitionConsumeProcessor(ctx context.Context, task *asynq.Task) 
 		return fmt.Errorf("%w: applicationId is required", asynq.SkipRetry)
 	}
 	if materialConsumer == nil {
-		return fmt.Errorf("领料任务消费依赖未初始化，请先调用 listener.Init")
+		return fmt.Errorf("领料任务消费依赖未初始化，请先调用 asynctask.Init")
 	}
 	return materialConsumer.Consume(ctx, input.ApplicationID)
 }

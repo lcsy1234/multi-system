@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-// Consume 是领料任务的业务处理方法，由 listener 的 Processor 调用。
+// Consume 是领料任务的业务处理方法，由 asynctask 的 Processor 调用。
 func (s *Service) Consume(ctx context.Context, applicationID string) error {
 	application, err := s.Get(ctx, applicationID)
 	if err != nil {

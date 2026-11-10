@@ -6,7 +6,6 @@ import (
 	"github.com/gogf/gf/v2/os/gcmd"
 	"multi-system/mes/internal/asynctask"
 	"multi-system/mes/internal/bootstrap"
-	"multi-system/mes/internal/listener"
 	"multi-system/mes/utility/worker"
 )
 
@@ -25,7 +24,7 @@ var Listener = gcmd.Command{
 			return err
 		}
 
-		listener.Init(service)
+		asynctask.Init(service)
 		return worker.StartConsumer(ctx, asynctask.Processors())
 	},
 }

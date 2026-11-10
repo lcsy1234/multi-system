@@ -3,6 +3,9 @@ server:
   openapiPath: "/api.json"
   swaggerPath: "/swagger"
 
+socket:
+  address: "127.0.0.1:8005"
+
 logger:
   level: "all"
   stdout: true

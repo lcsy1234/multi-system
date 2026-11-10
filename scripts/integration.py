@@ -79,6 +79,13 @@ def main():
             worker_log.flush();worker_log.seek(0);output=worker_log.read()
             assert "[领料任务消费]" in output and payload["clientRequestId"] in output
             print("OK 启动 worker 后：消费任务、读取 MySQL 申请、打印日志",flush=True)
+            subprocess.run([str(ROOT/".bin/mes"),"async-demo"],cwd=ROOT/"mes",env=env,check=True)
+            for _ in range(100):
+                worker_log.seek(0)
+                if "异步任务消费成功" in worker_log.read():break
+                time.sleep(.1)
+            else:raise AssertionError("Demo 任务未执行成功回调")
+            print("OK Demo:Consume 任务已执行回调，打印：异步任务消费成功",flush=True)
         except Exception:
             for log in logfiles:
                 log.flush();log.seek(0);print(log.read()[-3000:])
