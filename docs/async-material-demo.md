@@ -55,7 +55,7 @@ REDIS_ADDR=127.0.0.1:6379 make listener
 2. `mes/internal/asynctask/asynctask.go`：统一定义事件名 `EventMaterialRequisitionConsume` 和队列名称。
 3. `mes/internal/logic/material/service.go` 的 `Create`：保存申请，构造 `model.MaterialRequisitionConsumeInfo`，调用 `Worker.EnqueueTask`。
 4. `mes/utility/worker/producer.go` 的 `EnqueueTask`：统一完成 JSON 序列化、`asynq.NewTask`、Redis 入队及重复任务处理；当前设置不自动重试，成功任务保留 24 小时。
-5. `mes/internal/cmd/listener.go` 的 `Listener`：通过 `asynctask.Init(service)` 初始化业务依赖，再调用 `worker.StartConsumer(ctx, asynctask.Processors())` 统一注册并启动消费。worker 内部读取 Redis 和 `worker.consumer` 配置。映射集中维护在 `mes/internal/asynctask/asynctask.go`，同一文件定义任务名和任务对应的 handler 回调函数。独立程序入口在 `mes/boot/listener.go`，服务依赖初始化在 `mes/internal/bootstrap/bootstrap.go`，Asynq 消费封装在 `mes/utility/worker/consumer.go`。
+5. `mes/internal/cmd/listener.go` 的 `Listener`：通过 `asynctask.Init(service)` 初始化业务依赖，再调用 `worker.StartConsumer(ctx, asynctask.Processors())` 统一注册并启动消费。worker 内部读取 Redis 和 `worker.groups.default` 配置。映射集中维护在 `mes/internal/asynctask/asynctask.go`，同一文件定义任务名和任务对应的 handler 回调函数。独立程序入口在 `mes/boot/listener.go`，服务依赖初始化在 `mes/internal/bootstrap/bootstrap.go`，Asynq 消费封装在 `mes/utility/worker/consumer.go`。
 6. `mes/internal/asynctask/material_requisition_consume.go` 的 `MaterialRequisitionConsumeProcessor` 回调函数：反序列化、校验申请 ID，调用业务方法 `service.Consume`。
 7. `mes/internal/logic/material/consume.go` 的 `Consume`：查询申请、打印日志、更新消费状态。
 
@@ -112,3 +112,15 @@ make async-demo # 终端二：投递一条 Demo 任务
 
 投递端输出任务名与任务 ID，listener 终端输出 `异步任务消费成功`。
 可重复执行 `make async-demo`，每次生成新的任务 ID。
+
+## 消费封装和统一中间件
+
+`utility/worker/consumer.go` 集中维护 `Consumer`、`StartConsumer`、`NewConsumer`、`RegisterHandler`、`Start`、`Stop` 和 `middlewareLogger`。
+
+- `StartConsumer(ctx, handlers, groups...)` 默认使用 `default` 组。当前 `worker.groups.default` 配置继续有效；自定义组可配置 `worker.groups.<组名>.redis` 和 `servers` 列表。
+- `Consumer.Start` 安装中间件后通过 Asynq 的后台启动方式开始消费，外层等待退出信号并统一停止全部实例。
+- `Stop` 调用嵌入对象的 `Server.Stop()` 和 `Server.Shutdown()`，先停止拉取新任务，再等待已有任务结束。
+- 中间件记录任务类型、消息内容、开始、结果和耗时。回调返回的业务错误会原样交回 Asynq。
+- JSON 消息可以携带 `traceId`，值为 32 位十六进制字符串；未提供或为空时生成新的链路 ID，并注入回调函数的 context。非法 JSON、非字符串或格式错误的 traceId 会返回错误，不执行业务回调。
+
+默认组配置为 `worker.groups.default`，生产端与消费端统一从该配置读取 Redis。
