@@ -47,4 +47,21 @@ export interface DraftLine extends Material {
   quantity: string;
   remark: string;
 }
-export type Page = "processes" | "requests";
+export interface Order {
+  id: string;
+  factoryName: string;
+  factoryCode: string;
+  lineName: string;
+  lineCode: string;
+  productName: string;
+  productCode: string;
+  planDate: string;
+  planQuantity: number;
+}
+export type Page =
+  | "processes"
+  | "requests"
+  | "orders"
+  | "order-detail"
+  | "order-edit";
+

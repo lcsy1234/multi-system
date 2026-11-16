@@ -30,30 +30,65 @@ import {
   TeamOutlined,
 } from "@ant-design/icons";
 import { useMES } from "./useMES";
-import type { Page, ProductionProcess, Requisition } from "./types";
+import type { Order, Page, ProductionProcess, Requisition } from "./types";
 import { RequisitionModal } from "./components/RequisitionModal";
 import { RequisitionDetail } from "./components/RequisitionDetail";
+import { OrderList } from "./components/OrderList";
+import { OrderPlaceholder } from "./components/OrderPlaceholder";
 import { StatusTag } from "./components/StatusTag";
 
 interface Filters {
   keyword?: string;
   factory?: string;
 }
+function pageTitle(page: Page) {
+  if (page === "processes") return "生产产程";
+  if (page === "requests") return "领料申请";
+  if (page === "order-detail") return "订单详情";
+  if (page === "order-edit") return "订单编辑";
+  return "订单列表";
+}
+function pageDescription(page: Page) {
+  if (page === "processes") return "查看生产进度，按产程发起物料领用申请。";
+  if (page === "requests") return "观察领料任务从排队到 worker 消费的过程。";
+  if (page === "order-detail") return "订单详情占位页，后续补充完整字段与关联产程。";
+  if (page === "order-edit") return "订单编辑占位页，后续补充可保存表单。";
+  return "查看生产订单，进入详情或编辑。";
+}
 export default function App() {
-  const { catalog, records, loading, error, refresh, reload } = useMES();
+  const {
+    catalog,
+    orders,
+    ordersLoading,
+    records,
+    loading,
+    error,
+    refresh,
+    reload,
+  } = useMES();
   const [page, setPage] = useState<Page>("processes");
   const [tab, setTab] = useState("已开工");
   const [filters, setFilters] = useState<Filters>({});
   const [process, setProcess] = useState<ProductionProcess | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [filterForm] = Form.useForm<Filters>();
   const screens = Grid.useBreakpoint();
-  const title = page === "processes" ? "生产产程" : "领料申请";
+  const title = pageTitle(page);
+  const isOrderPage =
+    page === "orders" || page === "order-detail" || page === "order-edit";
   const navigate = (next: Page) => {
     setPage(next);
-    setTab(next === "processes" ? "已开工" : "全部申请");
+    if (next === "processes") setTab("已开工");
+    if (next === "requests") setTab("全部申请");
+    if (next === "orders") setSelectedOrderId(null);
+    setNavigationOpen(false);
+  };
+  const openOrder = (next: "order-detail" | "order-edit", order: Order) => {
+    setSelectedOrderId(order.id);
+    setPage(next);
     setNavigationOpen(false);
   };
   useEffect(() => {
@@ -225,7 +260,7 @@ export default function App() {
       </div>
       <Menu
         mode="inline"
-        selectedKeys={[page]}
+        selectedKeys={[isOrderPage ? "orders" : page]}
         defaultOpenKeys={["production"]}
         items={[
           {
@@ -243,6 +278,7 @@ export default function App() {
                   </span>
                 ),
               },
+              { key: "orders", label: "订单列表" },
             ],
           },
           {
@@ -256,7 +292,8 @@ export default function App() {
           },
         ]}
         onClick={({ key }) => {
-          if (key === "processes" || key === "requests") navigate(key);
+          if (key === "processes" || key === "requests" || key === "orders")
+            navigate(key);
         }}
       />
       <div className="sidebar-footer">
@@ -307,9 +344,7 @@ export default function App() {
               <div className="eyebrow">PRODUCTION MANAGEMENT</div>
               <h1>{title}</h1>
               <Typography.Text type="secondary">
-                {page === "processes"
-                  ? "查看生产进度，按产程发起物料领用申请。"
-                  : "观察领料任务从排队到 worker 消费的过程。"}
+                {pageDescription(page)}
               </Typography.Text>
             </div>
             <Button
@@ -333,110 +368,138 @@ export default function App() {
               }
             />
           )}
-          <Card className="filter-card">
-            <Form
-              form={filterForm}
-              layout="vertical"
-              className="filter-form"
-              onFinish={setFilters}
-            >
-              <Form.Item label="关键词" name="keyword">
-                <Input placeholder="搜索产程编号、订单或产品" allowClear />
-              </Form.Item>
-              <Form.Item label="工厂" name="factory">
-                <Select
-                  allowClear
-                  placeholder="全部工厂"
-                  options={[
-                    ...new Set(catalog?.processes.map((row) => row.factory)),
-                  ].map((factory) => ({ value: factory, label: factory }))}
-                />
-              </Form.Item>
-              <Space className="filter-actions">
-                <Button type="primary" htmlType="submit">
-                  查询
-                </Button>
-                <Button
-                  onClick={() => {
-                    filterForm.resetFields();
-                    setFilters({});
-                  }}
-                >
-                  重置
-                </Button>
-              </Space>
-            </Form>
-          </Card>
-          <Card className="data-card">
-            <div className="table-toolbar">
-              <Tabs
-                activeKey={tab}
-                onChange={setTab}
-                items={(page === "processes"
-                  ? ["已开工", "变更中", "已完工", "全部数据"]
-                  : ["全部申请", "待消费", "已消费", "失败"]
-                ).map((label) => ({ key: label, label }))}
-              />
-              <div className="table-tools">
-                {page === "requests" && (
-                  <Space>
-                    <Switch
-                      size="small"
-                      checked={autoRefresh}
-                      onChange={setAutoRefresh}
-                      aria-label="自动刷新申请列表"
-                    />
-                    <Typography.Text type="secondary">
-                      自动刷新（5 秒）
-                    </Typography.Text>
-                  </Space>
-                )}
-                <Typography.Text type="secondary">
-                  共 {page === "processes" ? processes.length : requests.length}{" "}
-                  条
-                </Typography.Text>
-              </div>
-            </div>
-            {page === "processes" ? (
-              <Table<ProductionProcess>
-                rowKey="id"
-                columns={processColumns}
-                dataSource={processes}
-                loading={!catalog}
-                scroll={{ x: 1040 }}
-                pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                locale={{
-                  emptyText: <Empty description="暂无符合条件的产程" />,
-                }}
-              />
-            ) : (
-              <Table<Requisition>
-                rowKey="id"
-                columns={requestColumns}
-                dataSource={requests}
-                loading={loading}
-                scroll={{ x: 960 }}
-                pagination={{ pageSize: 10, hideOnSinglePage: true }}
-                locale={{
-                  emptyText: (
-                    <Empty description="暂无领料申请，请到生产产程发起领料" />
-                  ),
-                }}
+          {page === "orders" && (
+            <OrderList
+              orders={orders}
+              loading={ordersLoading}
+              onDetail={(order) => openOrder("order-detail", order)}
+              onEdit={(order) => openOrder("order-edit", order)}
+            />
+          )}
+          {(page === "order-detail" || page === "order-edit") &&
+            selectedOrderId && (
+              <OrderPlaceholder
+                mode={page === "order-detail" ? "detail" : "edit"}
+                orderId={selectedOrderId}
+                onBack={() => navigate("orders")}
               />
             )}
-            <div className="table-caption">
-              {page === "processes"
-                ? "演示产程数据 · 选择产程后点击「领料」"
-                : "MySQL 最近 100 条申请 · 默认手动刷新"}
-            </div>
-          </Card>
-          <Alert
-            type="info"
-            showIcon
-            title="提交申请 → Redis 排队 → worker 消费"
-            description="本阶段仅保存申请、消费任务并打印日志，不调用 SCM，不扣减实际库存。"
-            className="flow-alert"
-          />
+          {(page === "processes" || page === "requests") && (
+            <>
+              <Card className="filter-card">
+                <Form
+                  form={filterForm}
+                  layout="vertical"
+                  className="filter-form"
+                  onFinish={setFilters}
+                >
+                  <Form.Item label="关键词" name="keyword">
+                    <Input placeholder="搜索产程编号、订单或产品" allowClear />
+                  </Form.Item>
+                  <Form.Item label="工厂" name="factory">
+                    <Select
+                      allowClear
+                      placeholder="全部工厂"
+                      options={[
+                        ...new Set(
+                          catalog?.processes.map((row) => row.factory),
+                        ),
+                      ].map((factory) => ({
+                        value: factory,
+                        label: factory,
+                      }))}
+                    />
+                  </Form.Item>
+                  <Space className="filter-actions">
+                    <Button type="primary" htmlType="submit">
+                      查询
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        filterForm.resetFields();
+                        setFilters({});
+                      }}
+                    >
+                      重置
+                    </Button>
+                  </Space>
+                </Form>
+              </Card>
+              <Card className="data-card">
+                <div className="table-toolbar">
+                  <Tabs
+                    activeKey={tab}
+                    onChange={setTab}
+                    items={(page === "processes"
+                      ? ["已开工", "变更中", "已完工", "全部数据"]
+                      : ["全部申请", "待消费", "已消费", "失败"]
+                    ).map((label) => ({ key: label, label }))}
+                  />
+                  <div className="table-tools">
+                    {page === "requests" && (
+                      <Space>
+                        <Switch
+                          size="small"
+                          checked={autoRefresh}
+                          onChange={setAutoRefresh}
+                          aria-label="自动刷新申请列表"
+                        />
+                        <Typography.Text type="secondary">
+                          自动刷新（5 秒）
+                        </Typography.Text>
+                      </Space>
+                    )}
+                    <Typography.Text type="secondary">
+                      共{" "}
+                      {page === "processes"
+                        ? processes.length
+                        : requests.length}{" "}
+                      条
+                    </Typography.Text>
+                  </div>
+                </div>
+                {page === "processes" ? (
+                  <Table<ProductionProcess>
+                    rowKey="id"
+                    columns={processColumns}
+                    dataSource={processes}
+                    loading={!catalog}
+                    scroll={{ x: 1040 }}
+                    pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                    locale={{
+                      emptyText: <Empty description="暂无符合条件的产程" />,
+                    }}
+                  />
+                ) : (
+                  <Table<Requisition>
+                    rowKey="id"
+                    columns={requestColumns}
+                    dataSource={requests}
+                    loading={loading}
+                    scroll={{ x: 960 }}
+                    pagination={{ pageSize: 10, hideOnSinglePage: true }}
+                    locale={{
+                      emptyText: (
+                        <Empty description="暂无领料申请，请到生产产程发起领料" />
+                      ),
+                    }}
+                  />
+                )}
+                <div className="table-caption">
+                  {page === "processes"
+                    ? "演示产程数据 · 选择产程后点击「领料」"
+                    : "MySQL 最近 100 条申请 · 默认手动刷新"}
+                </div>
+              </Card>
+              <Alert
+                type="info"
+                showIcon
+                title="提交申请 → Redis 排队 → worker 消费"
+                description="本阶段仅保存申请、消费任务并打印日志，不调用 SCM，不扣减实际库存。"
+                className="flow-alert"
+              />
+            </>
+          )}
         </Layout.Content>
         <Layout.Footer className="app-footer">
           制造协同演示 · MES 生产执行系统

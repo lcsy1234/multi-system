@@ -1,4 +1,5 @@
-import type { Catalog, Requisition, Submission } from "./types";
+import type { Catalog, Order, Requisition, Submission } from "./types";
+
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(path, options);
@@ -12,6 +13,8 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 export const api = {
   catalog: (signal?: AbortSignal) =>
     request<Catalog>("/api/v1/catalog", { signal }),
+  orders: (signal?: AbortSignal) =>
+    request<{ orders: Order[] }>("/api/v1/orders", { signal }),
   records: (signal?: AbortSignal) =>
     request<{ records: Requisition[] }>("/api/v1/material-requisitions", {
       signal,
