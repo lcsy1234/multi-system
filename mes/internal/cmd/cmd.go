@@ -8,6 +8,7 @@ import (
 	"multi-system/mes/internal/bootstrap"
 	"multi-system/mes/internal/controller/health"
 	"multi-system/mes/internal/controller/material"
+	"multi-system/mes/internal/controller/order"
 	"multi-system/mes/internal/storage"
 	"multi-system/mes/internal/web"
 	"os"
@@ -35,7 +36,7 @@ var Main = gcmd.Command{
 		}
 		s.Group("/", func(group *ghttp.RouterGroup) {
 			group.Middleware(ghttp.MiddlewareHandlerResponse)
-			group.Bind(health.NewV1(), materialController)
+			group.Bind(health.NewV1(), materialController, order.NewV1())
 		})
 		s.Run()
 		return nil
