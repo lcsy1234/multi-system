@@ -5,4 +5,5 @@ use (
 	./mes
 	./scm
 	./wms
+	./yq-tablehandle-system/backend
 )
