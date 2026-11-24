@@ -14,6 +14,8 @@ jobs:
     timeout-minutes: 35
     env:
       GOWORK: "off"
+      GOPROXY: "https://proxy.golang.org|direct"
+      GODEBUG: http2client=0
       MES_MYSQL_DSN: root:runner@tcp(127.0.0.1:3306)/multi_system_mes_demo
       MYSQL_TEST_PASSWORD: runner
     services:
