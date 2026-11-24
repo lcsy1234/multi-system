@@ -61,5 +61,14 @@ jobs:
           (cd hello-api && ./mvnw --batch-mode verify)
       - name: Verify the MES queue and all running applications
         run: |
+          MYSQL_PWD=runner mysql -h 127.0.0.1 -u root -e 'CREATE DATABASE go_demo'
+          mkdir -p newGoService/demo/manifest/config
+          cat > newGoService/demo/manifest/config/config.yaml <<'CONFIG'
+          server:
+            address: "127.0.0.1:8000"
+          database:
+            default:
+              link: "mysql:root:runner@tcp(127.0.0.1:3306)/go_demo"
+          CONFIG
           make integration db-init
           python3 scripts/actions_stack.py

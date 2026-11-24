@@ -58,24 +58,12 @@ def main():
         for port, service in enumerate(("erp", "wms", "scm", "mes"), 8001):
             assert json.loads(ready(f"{port}/health", processes))["data"]["service"] == service
         assert json.loads(ready("8005/health", processes))["status"] == "ok"
-        ready("8000/hello", processes)
+        assert b"go_demo" in ready("8000/hello", processes)
         assert b'id="root"' in ready("8004/", processes)
         assert b'id="root"' in ready("5175/", processes)
         assert json.loads(ready("5175/api/health", processes))["status"] == "ok"
         assert fetch("5175/api/sample").startswith(b"PK")
-        # Spring exposes POST /api/orders. A 405 on GET confirms a registered route.
-        from urllib.error import HTTPError
-        for _ in range(60):
-            try:
-                fetch("8080/api/orders")
-            except HTTPError as error:
-                if error.code == 405:
-                    break
-                raise
-            except URLError:
-                time.sleep(1)
-        else:
-            raise RuntimeError("Spring order endpoint unavailable")
+        assert json.loads(ready("8087/api/products?code=P001", processes))["productCode"] == "P001"
         # Exercise the real stdio transport and tool implementation against the live MES.
         subprocess.run(["node", "--input-type=module", "-e", """
           import { Client } from '@modelcontextprotocol/sdk/client/index.js';
