@@ -1,0 +1,18 @@
+{
+  "Settings": {
+    "Vendor": "GY0342",
+    "LineNo": "GC2005G01",
+    "LineName": "湖北一线（元卓）",
+    "FileType": 5,
+    "SaveDir": "D:\\DEV\\FlineTools\\bin\\x64\\station",
+    "TemplateDir": "D:\\测试"
+  },
+  "Bridge": {
+    "BindIP": "127.0.0.1",
+    "BindPort": 30001,
+    "CMSIP": "127.0.0.1",
+    "CMSPort": 15181,
+    "Threads": 4,
+    "ChunkSize": 1048576
+  }
+}

@@ -19,19 +19,37 @@ local function scalar(s)
   return s
 end
 
--- 只在同一个对象内部归并重名键。字符串键 "0" 和数组长度标记 [0] 不冲突。
-local function add(groups, key, value)
-  local group = groups[key] or {}
-  group[#group + 1] = value
-  groups[key] = group
+-- JSON 对象按键首次出现的顺序输出，重复键的值按原顺序组成数组。
+local function object()
+  return { keys = {}, groups = {} }
 end
-local function object(groups)
-  local result = {}
-  for k, values in pairs(groups) do
-    if #values == 1 then result[k] = values[1]
-    else values[0] = #values; result[k] = values end
+local function add(obj, key, value)
+  if not obj.groups[key] then
+    obj.keys[#obj.keys + 1] = key
+    obj.groups[key] = {}
   end
-  return result
+  table.insert(obj.groups[key], value)
+end
+local function encode_object(obj, json, depth)
+  local function render(value, level)
+    if type(value) == 'table' then return encode_object(value, json, level) end
+    return json.encode(value)
+  end
+  if #obj.keys == 0 then return '{}' end
+  local indent = string.rep('  ', depth)
+  local lines = {}
+  for _, key in ipairs(obj.keys) do
+    local values = obj.groups[key]
+    local text
+    if #values == 1 then text = render(values[1], depth + 1)
+    else
+      local items = {}
+      for i, v in ipairs(values) do items[i] = indent .. '    ' .. render(v, depth + 2) end
+      text = '[\n' .. table.concat(items, ',\n') .. '\n' .. indent .. '  ]'
+    end
+    lines[#lines + 1] = indent .. '  ' .. json.encode(key) .. ': ' .. text
+  end
+  return '{\n' .. table.concat(lines, ',\n') .. '\n' .. indent .. '}'
 end
 local function comment(s) return s:match('^[#;]') or s:sub(1,2) == '//' end
 local function section(s)
@@ -39,7 +57,7 @@ local function section(s)
   if name and (tail == '' or comment(tail)) then return trim(name) end
 end
 local function parse_settings(source)
-  local root, sections = {}, {}
+  local root, sections = object(), {}
   local current, number = root, 0
   for raw in (source .. '\n'):gmatch('(.-)\n') do
     number = number + 1
@@ -47,7 +65,11 @@ local function parse_settings(source)
     if line ~= '' and not comment(line) then
       local name = section(line)
       if name then
-        sections[name] = sections[name] or {}; current = sections[name]
+        if not sections[name] then
+          sections[name] = object()
+          add(root, name, sections[name])
+        end
+        current = sections[name]
       else
         local key, value = line:match('^([^=:%s]+)%s*[=:]%s*(.*)$')
         if not key then fail(('第 %d 行缺少有效的键值对'):format(number)) end
@@ -58,26 +80,25 @@ local function parse_settings(source)
           add(current, key, body)
         else
           local ending = #value + 1
-          for _, marker in ipairs({'%s[#;]', '%s//'}) do ending = math.min(ending, value:find(marker) or ending) end
+          for _, marker in ipairs({'%s[#;]', '%s//', '%s%*#'}) do ending = math.min(ending, value:find(marker) or ending) end
           if comment(value) then ending = 1 end
           add(current, key, scalar(trim(value:sub(1,ending-1))))
         end
       end
     end
   end
-  for name, fields in pairs(sections) do add(root, name, object(fields)) end
-  if next(root) == nil then fail('未找到键值对') end
-  return object(root)
+  if #root.keys == 0 then fail('未找到键值对') end
+  return root
 end
 
 local function parse_xml(source)
   local lxp = dependency('lxp', 'luaexpat')
-  local stack, root = {}, {}
+  local stack, root = {}, object()
   local parser = lxp.new({
     StartDoctypeDecl = function() fail('不支持 XML 文档类型声明，请使用普通配置 XML') end,
     StartElement = function(_, name, attrs)
       if #stack >= 256 then fail('XML 嵌套超过 256 层') end
-      stack[#stack+1] = {name=name, attrs=attrs, fields={}, text={}, children=0}
+      stack[#stack+1] = {name=name, attrs=attrs, fields=object(), text={}, children=0}
     end,
     CharacterData = function(_, text)
       local node = stack[#stack]; if node then table.insert(node.text, text) end
@@ -91,14 +112,16 @@ local function parse_xml(source)
       elseif #stack > 0 and key == 'param' and #attrs == 2 and attrs.name and attrs.value and node.children == 0 and text == '' then
         key, value = attrs.name, scalar(attrs.value)
       else
-        local fields = {}
+        local fields = object()
         for _, attr in ipairs(attrs) do add(fields, attr, scalar(attrs[attr])) end
-        for k, values in pairs(node.fields) do for _, v in ipairs(values) do add(fields,k,v) end end
+        for _, k in ipairs(node.fields.keys) do
+          for _, v in ipairs(node.fields.groups[k]) do add(fields, k, v) end
+        end
         if text ~= '' then add(fields, '#text', scalar(text)) end
-        value = object(fields)
+        value = fields
       end
       local parent = stack[#stack]
-      if parent then parent.children = parent.children + 1; add(parent.fields,key,value) else root[key] = value end
+      if parent then parent.children = parent.children + 1; add(parent.fields,key,value) else add(root, key, value) end
     end,
   })
   local ok, result = pcall(function()
@@ -139,7 +162,7 @@ local function convert(source)
   source = trim((source:gsub('^\239\187\191','')))
   local json = dependency('lunajson', 'lunajson')
   if source:match('^<') or source:match('^%?xml%s') then
-    return json.encode(parse_xml((source:gsub('^%?xml%s','<?xml '))))
+    return encode_object(parse_xml((source:gsub('^%?xml%s','<?xml '))), json, 0)
   end
   if source:match('^[%[{/]') then
     -- INI 的 [分组] 与 JSON 数组都可以以 [ 开头，先尝试完整 JSON。
@@ -151,7 +174,7 @@ local function convert(source)
       if not ini then fail('JSON 格式错误：请检查双引号、逗号及括号是否完整') end
     elseif not ok and not section(trim(source:match('^[^\r\n]*'))) then fail(clean) end
   end
-  return json.encode(parse_settings(source))
+  return encode_object(parse_settings(source), json, 0)
 end
 function M.convert(source)
   local ok, result = pcall(convert, source)
