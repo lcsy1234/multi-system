@@ -32,6 +32,9 @@ var openOptions = excelize.Options{UnzipSizeLimit: 32 << 20, UnzipXMLSizeLimit: 
 func router(dir string) *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.POST("/api/json-conversions", convertJSON)
+	r.POST("/api/shrimp/json-conversions", shrimpJSON)
+	r.POST("/api/script-optimizations", optimizeScript)
 	r.GET("/api/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 	r.GET("/api/options", func(c *gin.Context) {
 		now := today()

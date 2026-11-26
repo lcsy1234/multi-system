@@ -377,11 +377,7 @@ func (j *Job) run(ctx context.Context) error {
 		}
 		return nil
 	}
-	model := os.Getenv("DEEPSEEK_MODEL")
-	if model == "" {
-		model = "deepseek-chat"
-	}
-	m, e := deepseek.NewChatModel(ctx, &deepseek.ChatModelConfig{APIKey: os.Getenv("DEEPSEEK_API_KEY"), BaseURL: os.Getenv("DEEPSEEK_BASE_URL"), Model: model, Timeout: 90 * time.Second})
+	m, e := deepseek.NewChatModel(ctx, deepseekConfig())
 	if e != nil {
 		return e
 	}
@@ -395,4 +391,12 @@ func (j *Job) run(ctx context.Context) error {
 		return errors.New("Agent 未完成全部工具调用，请调整说明重试")
 	}
 	return e
+}
+
+func deepseekConfig() *deepseek.ChatModelConfig {
+	model := os.Getenv("DEEPSEEK_MODEL")
+	if model == "" {
+		model = "deepseek-flash"
+	}
+	return &deepseek.ChatModelConfig{APIKey: os.Getenv("DEEPSEEK_API_KEY"), BaseURL: os.Getenv("DEEPSEEK_BASE_URL"), Model: model, Timeout: 90 * time.Second}
 }

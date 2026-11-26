@@ -1,6 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.module-nav { display: flex; gap: 24px; padding: 12px max(5%, calc((100vw - 1160px) / 2)); background: white; }
+.module-nav [aria-current] { color: #216145; font-weight: 700; border-bottom: 2px solid; }
+.example-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.example-row button { background: #e9f2e4; padding: 3px 9px; border-radius: 5px; }
+.json-preview { overflow: auto; max-height: 60vh; padding: 16px; background: #f5faf4; }
 :root {
   font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
   color: #18382f;

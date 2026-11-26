@@ -1,6 +1,9 @@
+import { userError } from './errorMessages';
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
+import { JsonConverter } from "./JsonConverter";
+import { ShrimpConverter } from "./ShrimpConverter";
 
 type Options = {
   factories: string[];
@@ -76,6 +79,16 @@ async function readEvents(
   }
 }
 function App() {
+  const [page, setPage] = useState(location.hash);
+  const [optimization, setOptimization] = useState({sample:"", revision:0});
+  const converter = page === "#json";
+  const script = page === "#script-json";
+  const shrimp = page === "#shrimp-json";
+  useEffect(() => {
+    const navigate = () => setPage(location.hash);
+    window.addEventListener("hashchange", navigate);
+    return () => window.removeEventListener("hashchange", navigate);
+  }, []);
   const [opts, setOpts] = useState<Options>(),
     [filters, setFilters] = useState<Filters>({
       Factory: "",
@@ -107,7 +120,7 @@ function App() {
           End: o.end,
         }));
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setError(userError(e, "无法加载筛选选项，请刷新重试。")));
   }, []);
   function reset() {
     setResult(undefined);
@@ -133,7 +146,7 @@ function App() {
       setFile({ ...data, name: f.name });
       setSheet(data.sheets[0]);
     } catch (e) {
-      setError(String(e));
+      setError(userError(e, "上传失败，请检查文件后重试。"));
     } finally {
       setLoading(false);
     }
@@ -162,7 +175,7 @@ function App() {
       });
       if (!finished) throw Error("连接提前结束，请重新运行");
     } catch (e) {
-      setError(String(e));
+      setError(userError(e, "填报失败，请检查模板和筛选条件后重试。"));
     } finally {
       setBusy(false);
     }
@@ -201,10 +214,14 @@ function App() {
         </div>
         <span className="online">
           <em />
-          {opts ? opts.mode : "连接中"}
+          {shrimp ? "元气小虾米" : script ? "本地脚本" : converter ? "DeepSeek" : opts ? opts.mode : "连接中"}
         </span>
       </header>
-      <main>
+      <nav className="module-nav" aria-label="工作台模块"><a href="#report" aria-current={!converter && !script && !shrimp ? "page" : undefined}>智能填报</a><a href="#json" aria-current={converter ? "page" : undefined}>AI 优化脚本</a><a href="#script-json" aria-current={script ? "page" : undefined}>脚本转 JSON</a><a href="#shrimp-json" aria-current={shrimp ? "page" : undefined}>元气小虾米转 JSON</a></nav>
+      <div hidden={!shrimp}><ShrimpConverter /></div>
+      <div hidden={!converter}><JsonConverter key={optimization.revision} initial={optimization.sample} /></div>
+      <div hidden={!script}><JsonConverter local onOptimize={sample => { setOptimization(prev => ({sample, revision:prev.revision + 1})); location.hash = "json"; }} /></div>
+      <main hidden={converter || script || shrimp}>
         <div className="eyebrow">工厂工作台　/　智能填报</div>
         <h1>工厂数据智能填报</h1>
         <p className="lead">

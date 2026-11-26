@@ -87,7 +87,7 @@ func TestDeepSeekToolLoop(t *testing.T) {
 			Tools []any
 			Model string
 		}
-		if e := json.NewDecoder(r.Body).Decode(&request); e != nil || len(request.Tools) != 4 || request.Model != "deepseek-chat" {
+		if e := json.NewDecoder(r.Body).Decode(&request); e != nil || len(request.Tools) != 4 || request.Model != "deepseek-flash" {
 			t.Errorf("invalid tool request: %v", e)
 		}
 		if calls >= len(names) {
