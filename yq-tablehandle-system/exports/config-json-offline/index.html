@@ -1,6 +1,8 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>配置转 JSON · 离线版</title><style>body{font:16px system-ui;max-width:860px;margin:3rem auto;padding:0 1rem;color:#174638}textarea,pre{box-sizing:border-box;width:100%;padding:1rem;border:1px solid #b9c9bf;border-radius:8px;font:14px monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:.6rem 1rem;cursor:pointer}</style>
-<h1>配置转 JSON</h1><p>粘贴 INI、键值对、JSON 或 XML。本工具完全在浏览器本地运行。</p>
-<label for="source">原始内容</label><textarea id="source" rows="10">[Bridge] 111
-BindIP=127.0.0.1
-BindPort=30001</textarea><button id="run">转换为 JSON</button><h2>结果</h2><pre id="result" aria-live="polite"></pre>
-<script src="parser.js"></script><script>document.getElementById('run').onclick=()=>{const output=document.getElementById('result');try{output.textContent=JSON.stringify(ConfigParser.parseConfig(document.getElementById('source').value),null,2)}catch(error){output.textContent=error.message}};</script></html>
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>配置转 JSON · 离线版</title><style>body{font:16px system-ui;max-width:860px;margin:3rem auto;padding:0 1rem;color:#174638}textarea,pre{box-sizing:border-box;width:100%;padding:1rem;border:1px solid #b9c9bf;border-radius:8px;font:14px monospace}pre{white-space:pre-wrap;overflow-wrap:anywhere}button{padding:.6rem 1rem;cursor:pointer}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

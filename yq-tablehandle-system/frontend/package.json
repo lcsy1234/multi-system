@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build"
+    "build": "tsc --noEmit && vite build",
+    "build:offline": "tsc --noEmit && vite build --config vite.offline.config.js && cd ../exports/config-json-offline && zip -q ../config-json-offline.zip index.html parser.js app.js"
   },
   "dependencies": {
     "@jitl/quickjs-singlefile-browser-release-sync": "^0.31.0",

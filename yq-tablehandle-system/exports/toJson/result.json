@@ -1,18 +1,18 @@
 {
-  "Settings": {
-    "Vendor": "GY0342",
-    "LineNo": "GC2005G01",
-    "LineName": "湖北一线（元卓）",
-    "FileType": 5,
-    "SaveDir": "D:\\DEV\\FlineTools\\bin\\x64\\station",
-    "TemplateDir": "D:\\测试"
-  },
-  "Bridge": {
-    "BindIP": "127.0.0.1",
-    "BindPort": 30001,
-    "CMSIP": "127.0.0.1",
-    "CMSPort": 15181,
-    "Threads": 4,
-    "ChunkSize": 1048576
+  "GlobalParameter": {
+    "CodesPackSaveTime": 10,
+    "IsCheckUpdate": true,
+    "LockScreenTime": 20,
+    "UploadIp": "39.105.160.145",
+    "UploadPort": 32222,
+    "TokenUrl": "https://tts2.yuanqisenlin.com/api/v1/api-umm/access/authorize",
+    "TokenUserName": "",
+    "TokenUserPwd": "",
+    "TokenSotype": "PC",
+    "CStoreCertificate": "..\\Config\\Certificate\\cStore.pfx",
+    "CStoreCertificatePwd": "cNetty",
+    "UploadPath": "D:\\MaDownload\\3.0PLUSTest\\UploadPack\\",
+    "SystemFuction": 0,
+    "FileLimitSize": 30
   }
 }
