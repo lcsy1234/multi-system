@@ -52,7 +52,7 @@ def main():
         start("newGoService/demo", ROOT / ".bin/go-demo")
         start("yq-tablehandle-system/backend", ROOT / ".bin/table-agent")
         start("yq-tablehandle-system/frontend", "node_modules/.bin/vite", "preview",
-              "--host", "127.0.0.1", "--port", "5175", "--strictPort")
+              "--outDir", "dist-preview", "--host", "127.0.0.1", "--port", "5175", "--strictPort")
         war, = (ROOT / "hello-api/target").glob("*.war")
         start("hello-api", "java", "-jar", war)
         for port, service in enumerate(("erp", "wms", "scm", "mes"), 8001):

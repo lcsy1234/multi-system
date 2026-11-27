@@ -1,4 +1,4 @@
-package main
+package report
 
 import (
 	"context"
@@ -377,7 +377,7 @@ func (j *Job) run(ctx context.Context) error {
 		}
 		return nil
 	}
-	m, e := deepseek.NewChatModel(ctx, deepseekConfig())
+	m, e := deepseek.NewChatModel(ctx, DeepSeekConfig())
 	if e != nil {
 		return e
 	}
@@ -393,7 +393,7 @@ func (j *Job) run(ctx context.Context) error {
 	return e
 }
 
-func deepseekConfig() *deepseek.ChatModelConfig {
+func DeepSeekConfig() *deepseek.ChatModelConfig {
 	model := os.Getenv("DEEPSEEK_MODEL")
 	if model == "" {
 		model = "deepseek-flash"

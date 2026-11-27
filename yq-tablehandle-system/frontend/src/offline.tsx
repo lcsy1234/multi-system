@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { render } from 'react-dom';
 
 declare const ConfigParser: { parseConfig(source: string): unknown };
 
@@ -33,4 +33,4 @@ function OfflineConverter() {
   </main>;
 }
 
-createRoot(document.getElementById('root')!).render(<OfflineConverter />);
+render(<OfflineConverter />, document.getElementById('root'));

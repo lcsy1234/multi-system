@@ -1,11 +1,14 @@
 import { userError } from './errorMessages';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import { RequestContext } from './service';
+import { FETCH_URLS } from './config.url.tablehandle';
 import { convertSample, readRules, runRules, writeRules, type Rule } from './parserRules';
 
 const examples = { JSON: '{"工单":"0017","数量":12}', XML: '<工单 编号="0017"><工序>灌装</工序><工序>包装</工序></工单>', INI: '[Settings]\nSaveDir=D:\\工厂\\模板\n[Bridge]\nBindIP=127.0.0.1\nBindPort=30001' };
 
 export function JsonConverter({local = false, initial = '', onOptimize}: {local?: boolean; initial?: string; onOptimize?: (sample: string) => void}) {
   const [content, setContent] = useState(initial);
+  const request = useContext(RequestContext);
   const [instruction, setInstruction] = useState('');
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
@@ -23,9 +26,7 @@ export function JsonConverter({local = false, initial = '', onOptimize}: {local?
       let actual: string, previous = '';
       try { const current = await convertSample(content); actual = current.formatted; previous = current.rule?.code ?? ''; }
       catch (e) { actual = String(e); }
-      const response = await fetch('/api/script-optimizations', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sample:content,instruction,actual:Array.from(actual).slice(0,16000).join(''),previous})});
-      const data = await response.json();
-      if (!response.ok) throw Error(data.error || '生成失败');
+      const data = await request<Rule>(FETCH_URLS.optimize, {sample:content,instruction,actual:Array.from(actual).slice(0,16000).join(''),previous});
       const trial = await runRules(content, [data]);
       if (trial.json === undefined) throw Error('生成的脚本未识别该样本，请补充格式特征后重试');
       setResult(JSON.stringify(JSON.parse(trial.json), null, 2)); setCandidate(data);

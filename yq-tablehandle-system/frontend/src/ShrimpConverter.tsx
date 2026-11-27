@@ -1,7 +1,10 @@
 import { userError } from './errorMessages';
-import { useState } from 'react';
+import { useContext, useState } from 'react';
+import { RequestContext } from './service';
+import { FETCH_URLS } from './config.url.tablehandle';
 
 export function ShrimpConverter() {
+  const request = useContext(RequestContext);
   const [content, setContent] = useState('');
   const [result, setResult] = useState('');
   const [error, setError] = useState('');
@@ -12,9 +15,8 @@ export function ShrimpConverter() {
     if (new TextEncoder().encode(content).length > 65536) { setError('原始内容不能超过 64 KiB'); return; }
     setBusy(true);
     try {
-      const response = await fetch('/api/shrimp/json-conversions', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content})});
-      if (!response.ok) throw Error((await response.json().catch(()=>({}))).error || '无法连接转换服务');
-      const text = await response.text(); JSON.parse(text); setResult(text);
+      const data = await request<unknown>(FETCH_URLS.shrimp, {content});
+      setResult(JSON.stringify(data, null, 2));
     } catch (err) { setError(userError(err, '转换服务返回异常，请稍后重试。')); }
     finally { setBusy(false); }
   }

@@ -1,4 +1,4 @@
-package main
+package report
 
 import (
 	"encoding/json"
@@ -141,7 +141,7 @@ func TestOtherSources(t *testing.T) {
 func TestFructoseWorkbook(t *testing.T) {
 	t.Setenv("DEEPSEEK_API_KEY", "")
 	j := fixture(t)
-	b, e := excelize.OpenFile("testdata/fructose-demo.xlsx")
+	b, e := excelize.OpenFile("../../../../../testdata/fructose-demo.xlsx")
 	if e != nil {
 		t.Fatal(e)
 	}

@@ -1,4 +1,4 @@
-package main
+package report
 
 import (
 	"fmt"
@@ -39,7 +39,7 @@ type Filters struct{ Factory, Start, End, Line, SKU, Note string }
 
 func today() time.Time        { return time.Now().In(time.FixedZone("CST", 8*3600)) }
 func date(t time.Time) string { return t.Format(time.DateOnly) }
-func (f Filters) validate() error {
+func (f Filters) Validate() error {
 	a, e := time.Parse(time.DateOnly, f.Start)
 	b, ee := time.Parse(time.DateOnly, f.End)
 	if e != nil || ee != nil || b.Before(a) || b.Sub(a) > 365*24*time.Hour {

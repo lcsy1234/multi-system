@@ -1,12 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-.module-nav { display: flex; gap: 24px; padding: 12px max(5%, calc((100vw - 1160px) / 2)); background: white; }
-.module-nav [aria-current] { color: #216145; font-weight: 700; border-bottom: 2px solid; }
+.pangu-plugin-tablehandle {
+.workbench-layout { display: grid; grid-template-columns: 216px minmax(0, 1fr); min-height: calc(100dvh - 62px); }
+.module-sidebar { background: white; border-right: 1px solid #dae3db; }
+.module-sidebar nav { position: sticky; top: 0; padding-top: 12px; }
+.nav-toggle { display: none; }
+@media (min-width: 761px) and (max-width: 976px) {
+  .workbench-content .workspace { grid-template-columns: minmax(0, 1fr); }
+}
 .example-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .example-row button { background: #e9f2e4; padding: 3px 9px; border-radius: 5px; }
 .json-preview { overflow: auto; max-height: 60vh; padding: 16px; background: #f5faf4; }
-:root {
+& {
   font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
   color: #18382f;
   background: #f4f7f4;
@@ -191,16 +194,16 @@ textarea {
 ol {
   list-style: none;
 }
-li {
+ol > li {
   position: relative;
   display: flex;
   gap: 14px;
   padding: 0 0 24px;
 }
-li:last-child {
+ol > li:last-child {
   padding-bottom: 0;
 }
-li:not(:last-child):before {
+ol > li:not(:last-child):before {
   position: absolute;
   content: "";
   height: calc(100% - 26px);
@@ -209,7 +212,7 @@ li:not(:last-child):before {
   top: 26px;
   left: 12px;
 }
-li b {
+ol > li b {
   border: 1px solid #d6e0d7;
   background: #f5f8f4;
   border-radius: 50%;
@@ -220,11 +223,11 @@ li b {
   font: 12px monospace;
   flex: none;
 }
-li.active b {
+ol > li.active b {
   background: #ccedb4;
   color: #215435;
 }
-li p,
+ol > li p,
 .delivery p {
   font-size: 13px;
   margin-top: 5px;
@@ -279,6 +282,9 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 @media (max-width: 760px) {
+  .workbench-layout { display: block; }
+  .module-sidebar { display: none; }
+  .nav-toggle { display: inline-grid; place-items: center; width: 32px; height: 36px; font-size: 20px; }
   .workspace {
     grid-template-columns: 1fr;
     gap: 0;
@@ -306,4 +312,10 @@ textarea:focus-visible {
 }
 .mapping table {
   margin-top: 12px;
+}
+  .col-span-full { grid-column: 1 / -1; }
+  .mt-4 { margin-top: 1rem; }
+  .mt-5 { margin-top: 1.25rem; }
+  .text-red-700 { color: #b91c1c; }
+  [hidden] { display: none !important; }
 }

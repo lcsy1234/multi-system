@@ -12,6 +12,7 @@
 # 前端依赖、构建产物和缓存
 node_modules/
 dist/
+dist-preview/
 .vite/
 .cache/
 *.tsbuildinfo

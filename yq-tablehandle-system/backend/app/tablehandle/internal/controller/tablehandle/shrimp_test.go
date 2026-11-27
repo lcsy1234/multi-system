@@ -1,4 +1,4 @@
-package main
+package tablehandle
 
 import (
 	"encoding/json"
@@ -20,7 +20,7 @@ func TestShrimpConversion(t *testing.T) {
 	t.Setenv("XIAOXIAMI_TOKEN", "example")
 	t.Setenv("XIAOXIAMI_RPC_URL", rpc.URL+"/rpc")
 	res := httptest.NewRecorder()
-	router(t.TempDir()).ServeHTTP(res, httptest.NewRequest("POST", "/api/shrimp/json-conversions", strings.NewReader(`{"content":"id=0017"}`)))
+	testServer(t).ServeHTTP(res, httptest.NewRequest("POST", "/api/shrimp/json-conversions", strings.NewReader(`{"content":"id=0017"}`)))
 	if res.Code != 200 || res.Body.String() != "{\n  \"id\": \"0017\"\n}" {
 		t.Fatal(res.Code, res.Body.String())
 	}

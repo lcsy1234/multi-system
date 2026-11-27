@@ -1,4 +1,4 @@
-package main
+package tablehandle
 
 import (
 	"encoding/json"
@@ -36,7 +36,7 @@ func TestConversionAPI(t *testing.T) {
 			t.Setenv("DEEPSEEK_MODEL", "test-model")
 			t.Setenv("DEEPSEEK_API_KEY", "test-token")
 			response := httptest.NewRecorder()
-			router(t.TempDir()).ServeHTTP(response, httptest.NewRequest("POST", "/api/json-conversions", strings.NewReader(`{"content":"id=001"}`)))
+			testServer(t).ServeHTTP(response, httptest.NewRequest("POST", "/api/json-conversions", strings.NewReader(`{"content":"id=001"}`)))
 			if response.Code != tc.status || tc.want != "" && response.Body.String() != tc.want {
 				t.Fatalf("unexpected response: %d %s", response.Code, response.Body)
 			}

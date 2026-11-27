@@ -50,9 +50,20 @@ jobs:
           sudo systemctl start redis-server
       - name: Build both web applications and the MCP server
         run: |
-          for app in mes-web mes-orders-mcp yq-tablehandle-system/frontend; do
+          for app in mes-web mes-orders-mcp; do
             (cd "$app" && npm ci --registry=https://registry.npmjs.org --replace-registry-host=always && npm run build)
           done
+      - name: Build tablehandle plugin and standalone preview
+        working-directory: yq-tablehandle-system/frontend
+        env:
+          PANGU_NPM_TOKEN: ${{ secrets.PANGU_NPM_TOKEN }}
+        run: |
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/tablehandle.npmrc"
+          trap 'rm -f "$NPM_CONFIG_USERCONFIG"' EXIT
+          printf '%s\n' '//packages.aliyun.com/6107622415ca5a181b7d3865/npm/npm-registry/:_authToken=${PANGU_NPM_TOKEN}' > "$NPM_CONFIG_USERCONFIG"
+          npm ci
+          ENV_YQSL=dev npm run build
+          npm run build:preview
       - name: Build and test Go and Java services
         run: |
           make test build

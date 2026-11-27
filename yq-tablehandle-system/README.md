@@ -6,7 +6,7 @@
 
 需要 Go 1.24.13+、Node.js 20.19+ 或 22.12+、npm。以下命令从仓库根目录执行。
 
-**终端一，启动 Gin 后端**
+**终端一，启动 GoFrame 后端**
 
 ```sh
 cd yq-tablehandle-system
@@ -15,7 +15,11 @@ cd backend
 go run .
 ```
 
+后端采用 `template-gf` 的 `ai.hy` 分支 HTTP 结构和 GoFrame v2.10.3。在 `backend` 下也可执行 `go run ./app/tablehandle/boot/http`。默认监听 `127.0.0.1:8191`，可用 `TABLEHANDLE_HTTP_ADDR` 覆盖；该应用不需要模板中的数据库、Redis 或 worker。
+
 **终端二，启动网页**
+
+前端为盘古插件 `tablehandle`。安装前需有云效 npm 制品库的读取权限；项目 `.npmrc` 仅指定 `@pangu` 源，认证请按云效仓库指南配置在个人 `~/.npmrc`，不要把 Token 写进仓库。CI 使用只读 Secret `PANGU_NPM_TOKEN`。
 
 ```sh
 cd yq-tablehandle-system/frontend
@@ -24,6 +28,17 @@ npm run dev
 ```
 
 打开 [工厂智能填报工作台](http://127.0.0.1:5175)。Vite 将同源的 `/api` 代理到本机 8191 端口。两个进程都需保持运行。
+
+**盘古 OP 联调**：运行 `npm start`，在宿主 `/pd` 为 `tablehandle` 配置终端打印的本地插件地址。在菜单管理中按下表登记「文件名」，链接和授权由宿主管理；正式插件不使用独立预览的 hash 路由。
+
+| 父菜单 | 子菜单 | 文件名 |
+| --- | --- | --- |
+| 智能填报 | 工厂数据智能填报 | `plugin://tablehandle/report` |
+| AI 脚本 | AI 优化脚本 | `plugin://tablehandle/ai-script` |
+| AI 脚本 | 脚本转 JSON | `plugin://tablehandle/script-json` |
+| AI 脚本 | 元气小虾米转 JSON | `plugin://tablehandle/shrimp-json` |
+
+宿主联调还需要配置业务网关：SDK 的 JSON 请求走宿主 baseURL，应将 `src/config.url.tablehandle.ts` 中的业务接口转发给 GoFrame，并把 GoFrame 的原始 JSON 包装成宿主的 `{ code, data, message }` 契约。SSE `/api/run`、模板 `/api/sample` 和结果 `/api/results/:id` 使用宿主同源的鉴权转发，透传事件流和文件，关闭 SSE 缓冲；Vite 代理不作用于宿主页面。脚本试跑需要宿主 CSP 允许 Blob Worker 和 WebAssembly。
 
 **选择运行模式**
 
@@ -56,10 +71,10 @@ npm run dev
 
 ## 服务结构
 
-- `backend/main.go` 提供上传、模板下载、SSE 和结果下载。任务独立打开原始文件并以随机文件名另存。文件位于本机临时目录，重启服务后需重新上传。
-- `backend/agent.go` 定义 System Prompt 和四个 Eino 工具。查询使用只读结构化条件，拒绝 SQL 文本。回填工具接收目标 Sheet 与查询结果中的行号，逐格检查空值和公式，生成报告。
-- `backend/workbook.go` 负责示例生成、模板解析与坐标识别。`backend/warehouse.go` 定义内存表、筛选和聚合。
-- `frontend/src` 为 React、TypeScript 和 Tailwind CSS 工作台。
+- `backend/app/tablehandle/boot/http` 是模板式 HTTP 入口，`backend/main.go` 保留 `go run .` 兼容入口。`internal/cmd` 启动服务，`internal/controller/tablehandle` 提供上传、模板下载、SSE 和结果下载。任务独立打开原始文件并以随机文件名另存。文件位于本机临时目录，重启服务后需重新上传。
+- `backend/app/tablehandle/internal/logic/report/agent.go` 定义 System Prompt 和四个 Eino 工具。查询使用只读结构化条件，拒绝 SQL 文本。回填工具接收目标 Sheet 与查询结果中的行号，逐格检查空值和公式，生成报告。
+- `backend/app/tablehandle/internal/logic/report/workbook.go` 负责示例生成、模板解析与坐标识别。`backend/app/tablehandle/internal/logic/report/warehouse.go` 定义内存表、筛选和聚合。
+- `frontend/src/manifest.ts` 声明页面，`src/pages/layout.sidebar.tsx` 使用宿主菜单树渲染侧栏，业务样式限定在插件命名空间下。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -80,7 +95,7 @@ npm ci
 npm run build
 ```
 
-后端测试覆盖模板保护、百分比口径、选择性填充、无数据、SQL 拦截，以及通过本地兼容接口驱动的 DeepSeek 适配器与 ReAct 工具调用。前端构建先运行 TypeScript 检查，再输出静态文件到 `frontend/dist`。独立托管静态文件时，将 `/api` 转发到 Gin，关闭 SSE 响应缓冲。
+`ENV_YQSL=dev npm run build` 先类型检查，再生成 `dist/remoteEntry.js`，不上传 OSS。独立站使用 `npm run build:preview` 生成 `dist-preview/`，将 `/api` 转发到 GoFrame；`npm run build:offline` 保留离线转换工具。
 
 ## 果糖接收、使用记录表
 
