@@ -2,12 +2,13 @@ package tablehandle
 
 import (
 	"github.com/gogf/gf/v2/net/ghttp"
+	"multi-system/yq-tablehandle-system/backend/utility/idgen"
 	"testing"
 )
 
 func testServer(t *testing.T) *ghttp.Server {
 	t.Helper()
-	s := ghttp.GetServer(token())
+	s := ghttp.GetServer(idgen.Hex128())
 	s.SetAddr("127.0.0.1:0")
 	s.SetDumpRouterMap(false)
 	Bind(s, t.TempDir())

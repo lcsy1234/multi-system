@@ -68,7 +68,7 @@ jobs:
         run: |
           make test build
           (cd newGoService/demo && go test ./... && go build -o ../../.bin/go-demo .)
-          (cd yq-tablehandle-system/backend && go test ./... && go build -o ../../.bin/table-agent .)
+          (cd yq-tablehandle-system/backend && go test ./... && go build -o ../../.bin/table-agent ./app/tablehandle/boot/http)
           (cd hello-api && ./mvnw --batch-mode verify)
       - name: Verify the MES queue and all running applications
         run: |

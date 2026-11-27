@@ -2,14 +2,13 @@ package tablehandle
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/gogf/gf/v2/net/ghttp"
 	"github.com/xuri/excelize/v2"
 	"io"
 	"multi-system/yq-tablehandle-system/backend/app/tablehandle/internal/logic/report"
+	"multi-system/yq-tablehandle-system/backend/utility/idgen"
 
 	"net/http"
 	"os"
@@ -18,14 +17,6 @@ import (
 	"strings"
 	"time"
 )
-
-func token() string {
-	var b [16]byte
-	if _, e := rand.Read(b[:]); e != nil {
-		panic(e)
-	}
-	return hex.EncodeToString(b[:])
-}
 
 var validID = regexp.MustCompile("^[a-f0-9]{32}$")
 var openOptions = excelize.Options{UnzipSizeLimit: 32 << 20, UnzipXMLSizeLimit: 4 << 20}
@@ -36,9 +27,7 @@ func writeJSON(c *ghttp.Request, status int, value any) {
 }
 func Bind(server *ghttp.Server, dir string) {
 	r := server.Group("/api")
-	r.POST("/json-conversions", convertJSON)
-	r.POST("/shrimp/json-conversions", shrimpJSON)
-	r.POST("/script-optimizations", optimizeScript)
+	bindAdmin(r, conversionController{}, scriptController{})
 	r.GET("/health", func(c *ghttp.Request) { writeJSON(c, 200, map[string]any{"status": "ok"}) })
 	r.GET("/options", func(c *ghttp.Request) {
 
@@ -74,7 +63,7 @@ func Bind(server *ghttp.Server, dir string) {
 			writeJSON(c, 400, map[string]any{"error": "请选择不超过 8 MB 的 .xlsx 文件"})
 			return
 		}
-		id := token()
+		id := idgen.Hex128()
 		p := filepath.Join(dir, "up-"+id+".xlsx")
 		if e = saveUpload(p, source); e != nil {
 			writeJSON(c, 500, map[string]any{"error": "上传失败"})
@@ -120,7 +109,7 @@ func Bind(server *ghttp.Server, dir string) {
 		ctx, cancel := context.WithTimeout(c.Context(), 4*time.Minute)
 		defer cancel()
 		send("start", map[string]any{"message": "已接收填报任务"})
-		result, e := report.Run(ctx, b, in.Sheet, token(), dir, in.Filters, func(tool, msg string) { send("step", map[string]any{"tool": tool, "message": msg}) })
+		result, e := report.Run(ctx, b, in.Sheet, idgen.Hex128(), dir, in.Filters, func(tool, msg string) { send("step", map[string]any{"tool": tool, "message": msg}) })
 		if e != nil {
 			send("failure", map[string]any{"message": e.Error()})
 			return

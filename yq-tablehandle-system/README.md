@@ -10,9 +10,9 @@
 
 ```sh
 cd yq-tablehandle-system
-cp .env.example .env
+cp -n backend/app/tablehandle/manifest/config/env.example .env
 cd backend
-go run .
+make run
 ```
 
 后端采用 `template-gf` 的 `ai.hy` 分支 HTTP 结构和 GoFrame v2.10.3。在 `backend` 下也可执行 `go run ./app/tablehandle/boot/http`。默认监听 `127.0.0.1:8191`，可用 `TABLEHANDLE_HTTP_ADDR` 覆盖；该应用不需要模板中的数据库、Redis 或 worker。
@@ -71,7 +71,7 @@ npm run dev
 
 ## 服务结构
 
-- `backend/app/tablehandle/boot/http` 是模板式 HTTP 入口，`backend/main.go` 保留 `go run .` 兼容入口。`internal/cmd` 启动服务，`internal/controller/tablehandle` 提供上传、模板下载、SSE 和结果下载。任务独立打开原始文件并以随机文件名另存。文件位于本机临时目录，重启服务后需重新上传。
+- `backend/app/tablehandle/boot/http` 是模板式 HTTP 入口，后端根目录通过 Makefile 选择服务。`internal/cmd` 启动服务，`internal/controller/tablehandle` 提供上传、模板下载、SSE 和结果下载。任务独立打开原始文件并以随机文件名另存。文件位于本机临时目录，重启服务后需重新上传。
 - `backend/app/tablehandle/internal/logic/report/agent.go` 定义 System Prompt 和四个 Eino 工具。查询使用只读结构化条件，拒绝 SQL 文本。回填工具接收目标 Sheet 与查询结果中的行号，逐格检查空值和公式，生成报告。
 - `backend/app/tablehandle/internal/logic/report/workbook.go` 负责示例生成、模板解析与坐标识别。`backend/app/tablehandle/internal/logic/report/warehouse.go` 定义内存表、筛选和聚合。
 - `frontend/src/manifest.ts` 声明页面，`src/pages/layout.sidebar.tsx` 使用宿主菜单树渲染侧栏，业务样式限定在插件命名空间下。
